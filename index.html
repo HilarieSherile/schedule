@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF7F0; --ink:#1F2320; --ink-soft:#6b6659; --rule:#E5DFD1;
+    --margin-line:#c98a6b;
+    --class:#3B6E5C; --work:#B5562A; --homework:#7A6B9E;
+    --reading:#B8952E; --sleep:#8C93A6; --other:#6E6558;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .page{max-width:640px;margin:0 auto;padding:24px 18px 70px;}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin:0;letter-spacing:-0.01em;}
+  .year{font-family:'Fraunces',serif;font-style:italic;color:var(--ink-soft);font-size:14px;}
+  .nav{display:flex;align-items:center;gap:8px;margin:12px 0 2px;flex-wrap:wrap;}
+  .nav button{border:none;background:none;font-family:'Fraunces',serif;font-size:17px;color:var(--ink);cursor:pointer;padding:2px 6px;line-height:1;}
+  .nav button:hover{color:var(--margin-line);}
+  .nav input[type=date]{font-family:'Inter',sans-serif;border:1px solid var(--rule);background:transparent;color:var(--ink-soft);border-radius:6px;padding:3px 6px;font-size:12px;}
+  .pillbtn{font-family:'Inter',sans-serif;font-size:11.5px;border:1px solid var(--rule);border-radius:6px;padding:3px 8px;background:transparent;color:var(--ink-soft);cursor:pointer;}
+  .pillbtn:hover{border-color:var(--margin-line);color:var(--margin-line);}
+  .pillbtn.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+  .tabs{display:flex;gap:6px;margin:16px 0 10px;}
+
+  .banner{background:#F3E7D6;border:1px solid #E3CBA1;border-radius:8px;padding:10px 12px;margin:14px 0;font-size:12.5px;color:var(--ink);display:none;}
+  .banner.show{display:block;}
+  .banner b{font-family:'Fraunces',serif;}
+  .banner ul{margin:6px 0 4px;padding-left:18px;}
+  .banner .dismiss{float:right;background:none;border:none;color:var(--ink-soft);cursor:pointer;text-decoration:underline;font-size:11.5px;}
+
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 4px;}
+  .legend span{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  .sheet{position:relative;margin-top:10px;border-top:1px solid var(--rule);}
+  .sheet::before{content:"";position:absolute;top:0;bottom:0;left:52px;width:1px;background:var(--margin-line);opacity:.35;}
+  .block{position:relative;display:flex;align-items:stretch;border-bottom:1px solid var(--rule);}
+  .block.empty{min-height:20px;}
+  .hour-label{font-family:'Fraunces',serif;font-size:10.5px;color:var(--ink-soft);width:52px;flex:0 0 52px;padding:4px 8px 4px 0;text-align:right;line-height:1.1;user-select:none;}
+  .content{flex:1;display:flex;align-items:center;padding:4px 8px 4px 12px;cursor:pointer;border-left:3px solid transparent;min-height:20px;}
+  .content.tpl{background:rgba(0,0,0,0.02);}
+  .content .txt{font-size:13px;line-height:1.3;color:var(--ink);word-break:break-word;}
+  .content .txt.done{color:var(--ink-soft);text-decoration:line-through;}
+  .content .placeholder{font-size:11.5px;color:#cdc6b5;}
+  .check{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--ink-soft);margin-right:8px;flex:0 0 14px;cursor:pointer;background:transparent;}
+  .check.done{background:var(--ink);border-color:var(--ink);}
+  .badge{font-size:9.5px;color:var(--ink-soft);margin-left:6px;opacity:.6;}
+
+  /* fixed-schedule blocks (class/work/sleep) look solid & rigid; tasks stay light with a checkbox */
+  .content.fixed{border-left:none;padding-left:14px;align-items:flex-start;flex-direction:column;justify-content:center;gap:1px;}
+  .content.fixed .fixed-main{display:flex;align-items:center;gap:6px;width:100%;}
+  .content.fixed .fixed-dot{width:7px;height:7px;border-radius:50%;flex:0 0 7px;}
+  .content.fixed .txt{font-weight:600;}
+  .content.fixed .sub{font-size:10.5px;color:var(--ink-soft);opacity:.85;padding-left:13px;}
+
+  .editor{background:rgba(201,138,107,0.07);padding:8px 8px 8px 64px;border-bottom:1px solid var(--rule);}
+  .editor input[type=text]{width:100%;font-family:'Inter',sans-serif;font-size:13px;border:none;border-bottom:1px solid var(--rule);background:transparent;padding:4px 0;outline:none;}
+  .editor .loc{margin-top:6px;}
+  .editor .loc input[type=text]{font-size:11.5px;color:var(--ink-soft);}
+  .editor .cats{display:flex;gap:6px;margin-top:8px;align-items:center;}
+  .editor .cats button{width:16px;height:16px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;}
+  .editor .cats button.active{border-color:var(--ink);}
+  .editor .actions{margin-top:6px;display:flex;gap:10px;}
+  .editor .actions button{font-size:11px;background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;padding:0;}
+
+  .expand-toggle{text-align:center;margin-top:8px;}
+  .expand-toggle button{font-size:11.5px;color:var(--ink-soft);background:none;border:none;text-decoration:underline;cursor:pointer;}
+  .status{font-size:11px;color:#b7ab8f;text-align:right;margin-top:6px;height:14px;}
+
+  .panel{margin-top:26px;border-top:1px solid var(--rule);padding-top:14px;}
+  .panel h2{font-family:'Fraunces',serif;font-size:16px;margin:0 0 8px;}
+  .todo-add{display:flex;gap:6px;margin-bottom:8px;}
+  .todo-add input[type=text]{flex:1;font-family:'Inter',sans-serif;font-size:13px;border:1px solid var(--rule);border-radius:6px;padding:6px 8px;background:transparent;outline:none;}
+  .todo-add select{font-family:'Inter',sans-serif;font-size:12px;border:1px solid var(--rule);border-radius:6px;background:transparent;}
+  .todo-add button{font-family:'Inter',sans-serif;font-size:12px;border:none;background:var(--ink);color:var(--paper);border-radius:6px;padding:6px 12px;cursor:pointer;}
+  .todo-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:13px;}
+  .todo-item .t{flex:1;}
+  .todo-item button{font-size:11px;background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;}
+  .assign-flag{background:#EFE7D8;border:1px solid var(--margin-line);border-radius:6px;padding:8px 10px;font-size:12px;margin:8px 0;display:none;}
+  .assign-flag.show{display:flex;justify-content:space-between;align-items:center;}
+  .assign-flag button{font-size:11px;background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;}
+
+  .weekday-group{margin-bottom:14px;}
+  .weekday-group h3{font-family:'Fraunces',serif;font-size:14px;margin:0 0 4px;color:var(--ink);}
+  .weekday-group .empty-note{font-size:12px;color:#b7ab8f;}
+
+  details.tpl-editor{margin-top:26px;border-top:1px solid var(--rule);padding-top:14px;}
+  details.tpl-editor summary{font-family:'Fraunces',serif;font-size:16px;cursor:pointer;}
+  .dow-tabs{display:flex;gap:4px;margin:12px 0 10px;flex-wrap:wrap;}
+  .tpl-block-row{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--rule);}
+  .tpl-block-row .lbl{flex:1;}
+  .tpl-block-row button{font-size:11px;background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;}
+  .tpl-add{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center;}
+  .tpl-add input[type=text]{font-family:'Inter',sans-serif;font-size:12.5px;border:1px solid var(--rule);border-radius:6px;padding:5px 7px;background:transparent;outline:none;width:120px;}
+  .tpl-add select{font-family:'Inter',sans-serif;font-size:12px;border:1px solid var(--rule);border-radius:6px;background:transparent;padding:4px;}
+  .tpl-add button{font-family:'Inter',sans-serif;font-size:12px;border:none;background:var(--ink);color:var(--paper);border-radius:6px;padding:5px 10px;cursor:pointer;}
+  .holiday-row{display:flex;gap:6px;align-items:center;margin-top:14px;flex-wrap:wrap;}
+  .holiday-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .holiday-chip{background:var(--rule);border-radius:12px;padding:2px 8px;font-size:11px;display:flex;gap:5px;align-items:center;}
+  .holiday-chip button{border:none;background:none;cursor:pointer;color:var(--ink-soft);font-size:11px;}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1 id="dayName">Loading…</h1>
+    <span class="year" id="dateSub"></span>
+  </header>
+
+  <div class="nav">
+    <button id="prevBtn" aria-label="Previous day">&larr;</button>
+    <input type="date" id="datePicker">
+    <button id="nextBtn" aria-label="Next day">&rarr;</button>
+    <button class="pillbtn" id="todayBtn">Today</button>
+    <button class="pillbtn" id="holidayToggle">Mark as holiday</button>
+  </div>
+
+  <div class="tabs">
+    <button class="pillbtn on" id="dayTabBtn">Day</button>
+    <button class="pillbtn" id="weekTabBtn">This week</button>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <div id="dayView">
+    <div class="legend">
+      <span><i class="dot" style="background:var(--class)"></i>Class</span>
+      <span><i class="dot" style="background:var(--work)"></i>Work</span>
+      <span><i class="dot" style="background:var(--homework)"></i>Homework</span>
+      <span><i class="dot" style="background:var(--reading)"></i>Reading</span>
+      <span><i class="dot" style="background:var(--sleep)"></i>Sleep</span>
+      <span><i class="dot" style="background:var(--other)"></i>Other</span>
+    </div>
+
+    <div class="assign-flag" id="assignFlag">
+      <span id="assignFlagText"></span>
+      <button id="assignCancel">cancel</button>
+    </div>
+
+    <div class="sheet" id="sheet"></div>
+
+    <div class="expand-toggle"><button id="expandBtn">Show 12–6 AM</button></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="weekView" style="display:none;"></div>
+
+  <div class="panel">
+    <h2>To‑do (unscheduled)</h2>
+    <div class="todo-add">
+      <input type="text" id="todoInput" placeholder="Add something you need to do…">
+      <select id="todoCat">
+        <option value="homework">Homework</option>
+        <option value="reading">Reading</option>
+        <option value="work">Work</option>
+        <option value="other">Other</option>
+      </select>
+      <button id="todoAddBtn">Add</button>
+    </div>
+    <div id="todoList"></div>
+  </div>
+
+  <details class="tpl-editor" id="tplEditor">
+    <summary>Fixed weekly schedule (classes, work, holidays)</summary>
+    <p style="font-size:12px;color:var(--ink-soft);margin:8px 0 0;">Set your recurring blocks once — they auto-fill every matching day unless you mark that day a holiday.</p>
+    <div class="dow-tabs" id="dowTabs"></div>
+    <div id="tplBlockList"></div>
+    <div class="tpl-add">
+      <input type="text" id="tplLabel" placeholder="Label, e.g. MATH 232">
+      <select id="tplCat">
+        <option value="class">Class</option>
+        <option value="work">Work</option>
+        <option value="homework">Homework</option>
+        <option value="reading">Reading</option>
+        <option value="sleep">Sleep</option>
+        <option value="other">Other</option>
+      </select>
+      <select id="tplStart"></select>
+      <span style="font-size:12px;color:var(--ink-soft);">to</span>
+      <select id="tplEnd"></select>
+      <input type="text" id="tplLocation" placeholder="Location (optional)">
+      <button id="tplAddBtn">Add block</button>
+      <button class="pillbtn" id="tplCancelEdit" style="display:none;">Cancel edit</button>
+    </div>
+    <div class="holiday-row">
+      <span style="font-size:12.5px;color:var(--ink-soft);">Holidays:</span>
+      <input type="date" id="holidayInput">
+      <button class="pillbtn" id="holidayAddBtn">Add</button>
+    </div>
+    <div class="holiday-list" id="holidayList"></div>
+  </details>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ---- Firebase setup ----
+// Paste your project's config here (Firebase console > Project settings > Your apps > SDK setup and config)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// Every device using this file with the same firebaseConfig reads/writes the same Firestore project,
+// which is what makes the data sync across devices.
+const PLANNER_COLLECTION = 'planner_data';
+
+const CATS = {
+  class:{label:'Class',var:'--class'}, work:{label:'Work',var:'--work'},
+  homework:{label:'Homework',var:'--homework'}, reading:{label:'Reading',var:'--reading'},
+  sleep:{label:'Sleep',var:'--sleep'}, other:{label:'Other',var:'--other'}
+};
+const DOW_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const FIXED_CATS = new Set(['class','work','sleep']); // rendered as rigid blocks, no checkbox
+let editingBlockId = null;
+
+let currentDate = new Date();
+let template = { blocks: [] };
+let holidays = [];
+let dayData = {};
+let backlog = [];
+let showEarly = false;
+let editingSlot = null;
+let currentDow = new Date().getDay();
+let assigning = null;
+let viewMode = 'day';
+
+function pad(n){return String(n).padStart(2,'0');}
+function fmt(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function dayKey(d){return 'day:'+fmt(d);}
+function slotLabel(slot){
+  const totalMin = slot*30, h = Math.floor(totalMin/60), m = totalMin%60;
+  const period = h<12?'AM':'PM'; let disp = h%12; if(disp===0)disp=12;
+  return disp + (m===0?':00':':30') + ' ' + period;
+}
+function minToLabel(min){
+  const h=Math.floor(min/60), m=min%60, period=h<12?'AM':'PM'; let disp=h%12; if(disp===0)disp=12;
+  return disp+(m===0?':00':':30')+' '+period;
+}
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+async function safeGet(key){
+  try{
+    const doc = await db.collection(PLANNER_COLLECTION).doc(key).get();
+    return doc.exists ? JSON.parse(doc.data().value) : null;
+  }catch(e){ console.error('safeGet failed:', e); return null; }
+}
+async function safeSet(key,val){
+  try{
+    await db.collection(PLANNER_COLLECTION).doc(key).set({ value: JSON.stringify(val) });
+    setStatus('Saved');
+  }catch(e){ console.error('safeSet failed:', e); setStatus('Could not save'); }
+}
+function setStatus(msg){
+  const el=document.getElementById('status');
+  el.textContent=msg;
+  if(msg){ setTimeout(()=>{ if(el.textContent===msg) el.textContent=''; },1000); }
+}
+
+const DEFAULT_BLOCKS = [
+  // dow: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
+  {dow:1,start:810,end:870,label:'MATH 232',cat:'class',location:'SRYC 3170'},
+  {dow:3,start:810,end:870,label:'MATH 232',cat:'class',location:'SRYC 3170'},
+  {dow:5,start:810,end:870,label:'MATH 232',cat:'class',location:'SRYC 3170'},
+
+  {dow:1,start:870,end:930,label:'SEE 110',cat:'class',location:'SRYC 2740'},
+  {dow:4,start:870,end:990,label:'SEE 110',cat:'class',location:'SRYC 2740'},
+
+  {dow:2,start:810,end:870,label:'SEE 100 Lecture',cat:'class',location:'SRYC 2740'},
+  {dow:2,start:870,end:1050,label:'SEE 100 Lab',cat:'class',location:'Surrey Engineering Bldg 4024'},
+  {dow:4,start:750,end:870,label:'SEE 100 Lecture',cat:'class',location:'SRYC 2740'},
+
+  {dow:1,start:900,end:930,label:'PHYS 140 pre-quiz due',cat:'homework',location:''},
+  {dow:3,start:900,end:930,label:'PHYS 140 pre-quiz due',cat:'homework',location:''},
+  {dow:5,start:900,end:930,label:'PHYS 140 pre-quiz due',cat:'homework',location:''},
+
+  {dow:1,start:930,end:990,label:'PHYS 140 Lecture',cat:'class',location:'SRYC 2975'},
+  {dow:1,start:990,end:1050,label:'PHYS 140 Tutorial',cat:'class',location:'SRYC 2975'},
+  {dow:3,start:930,end:990,label:'PHYS 140 Lecture',cat:'class',location:'SRYC 2975'},
+  {dow:3,start:990,end:1050,label:'PHYS 140 Lab',cat:'class',location:'SRYC 2975'},
+  {dow:5,start:930,end:990,label:'PHYS 140 Lecture',cat:'class',location:'SRYC 2975'},
+  {dow:5,start:990,end:1050,label:'PHYS 140 Lab',cat:'class',location:'SRYC 2975'},
+
+  {dow:3,start:570,end:750,label:'BUS 314',cat:'class',location:'Surrey Engineering Bldg 4016'},
+
+  {dow:1,start:1080,end:1260,label:'Work',cat:'work',location:''},
+  {dow:3,start:1080,end:1260,label:'Work',cat:'work',location:''},
+  {dow:5,start:1080,end:1260,label:'Work',cat:'work',location:''},
+];
+const DEFAULT_HOLIDAYS = ['2026-09-30','2026-10-12','2026-11-11'];
+const BUS_ROOM = 'Surrey Engineering Bldg 4016';
+const DEFAULT_ONEOFFS = [
+  {date:'2026-10-09', slots:[31,32], text:'PHYS 140 — Midterm 1', cat:'class'},
+  {date:'2026-11-06', slots:[31,32], text:'PHYS 140 — Midterm 2', cat:'class'},
+  {date:'2026-11-27', slots:[31,32], text:'PHYS 140 — Midterm 3', cat:'class'},
+  {date:'2026-12-02', slots:[33,34], text:'PHYS 140 — Lab Test', cat:'class'},
+  {date:'2026-10-14', slots:[27,28], text:'MATH 232 — Midterm 1', cat:'class'},
+  {date:'2026-11-18', slots:[27,28], text:'MATH 232 — Midterm 2', cat:'class'},
+
+  // BUS 314 quizzes, assignments & exams
+  {date:'2026-09-14', slots:[47], text:'BUS 314 — Mental math homework due', cat:'homework'},
+  {date:'2026-09-23', slots:[19,20,21,22,23,24], text:'BUS 314 — Quiz 1: Financial statements', cat:'class', location:BUS_ROOM},
+  {date:'2026-10-14', slots:[19,20,21,22,23,24], text:'BUS 314 — Midterm Exam', cat:'class', location:BUS_ROOM},
+  {date:'2026-10-19', slots:[47], text:'BUS 314 — Excel modelling homework due', cat:'homework'},
+  {date:'2026-10-28', slots:[19,20,21,22,23,24], text:'BUS 314 — Quiz 2: Valuation methods', cat:'class', location:BUS_ROOM},
+  {date:'2026-11-16', slots:[47], text:'BUS 314 — Case assignment due', cat:'homework'},
+  {date:'2026-11-24', slots:[36,37,38,39,40,41], text:'BUS 314 — Elevator Pitch (OppFest)', cat:'class', location:'SFU Surrey Mezzanine, SRYC 2400'},
+  {date:'2026-11-30', slots:[46], text:'BUS 314 — Pitch deck due (Canvas)', cat:'homework'},
+  {date:'2026-11-30', slots:[47], text:'BUS 314 — Financial plan due (Canvas)', cat:'homework'},
+  {date:'2026-12-02', slots:[19,20,21,22,23,24], text:'BUS 314 — Pitch Presentation', cat:'class', location:BUS_ROOM},
+];
+
+async function seedIfNeeded(){
+  const seeded = await safeGet('seeded');
+  if(seeded) return;
+  if(template.blocks.length===0){
+    template.blocks = DEFAULT_BLOCKS.map(b=>({...b,id:uid()}));
+    await safeSet('template', template);
+  }
+  if(holidays.length===0){
+    holidays = DEFAULT_HOLIDAYS.slice();
+    await safeSet('holidays', holidays);
+  }
+  for(const ev of DEFAULT_ONEOFFS){
+    const key = 'day:'+ev.date;
+    const existing = (await safeGet(key)) || {overrides:{}};
+    if(!existing.overrides) existing.overrides = {};
+    ev.slots.forEach(s=>{ existing.overrides[s] = {text: ev.text, cat: ev.cat, done:false, location: ev.location||''}; });
+    await safeSet(key, existing);
+  }
+  await safeSet('seeded', true);
+}
+
+async function loadAll(){
+  template = (await safeGet('template')) || { blocks: [] };
+  holidays = (await safeGet('holidays')) || [];
+  backlog = (await safeGet('backlog')) || [];
+  await seedIfNeeded();
+  await loadDay();
+  renderTodo();
+  renderTemplateEditor();
+  await computeReminders();
+}
+async function loadDay(){
+  dayData = (await safeGet(dayKey(currentDate))) || { overrides:{} };
+  renderHeader();
+  render();
+}
+
+function renderHeader(){
+  document.getElementById('dayName').textContent = currentDate.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('dateSub').textContent = currentDate.getFullYear();
+  document.getElementById('datePicker').value = fmt(currentDate);
+  const isHol = holidays.includes(fmt(currentDate));
+  document.getElementById('holidayToggle').classList.toggle('on', isHol);
+  document.getElementById('holidayToggle').textContent = isHol ? 'Holiday ✓' : 'Mark as holiday';
+}
+
+function mergedForDate(dateStr, data, dow){
+  const merged = new Array(48).fill(null);
+  const isHol = holidays.includes(dateStr);
+  if(!isHol){
+    template.blocks.filter(b=>b.dow===dow).forEach(b=>{
+      for(let s=b.start/30; s<b.end/30; s++){
+        merged[s] = {text:b.label, cat:b.cat, done:false, template:true, blockId:b.id, location:b.location||''};
+      }
+    });
+  }
+  const ov = (data && data.overrides) || {};
+  Object.keys(ov).forEach(k=>{
+    const s=+k;
+    if(ov[k].cleared){ merged[s]=null; }
+    else { merged[s] = {text:ov[k].text, cat:ov[k].cat, done:!!ov[k].done, template:false, location:ov[k].location||''}; }
+  });
+  return merged;
+}
+
+function sig(e){ return e ? (e.text+'|'+e.cat+'|'+e.done+'|'+(e.location||'')) : '__empty__'; }
+
+function render(){
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = '';
+  const merged = mergedForDate(fmt(currentDate), dayData, currentDate.getDay());
+  const start = showEarly ? 0 : 12;
+  const end = 48;
+
+  let i = start;
+  while(i < end){
+    if(editingSlot===i){
+      sheet.appendChild(buildEditor(i, merged[i]));
+      i++; continue;
+    }
+    let j=i+1;
+    const s0 = sig(merged[i]);
+    while(j<end && editingSlot!==j && sig(merged[j])===s0) j++;
+    sheet.appendChild(buildBlock(i, j-1, merged[i]));
+    i = j;
+  }
+  document.getElementById('expandBtn').textContent = showEarly ? 'Hide 12–6 AM' : 'Show 12–6 AM';
+}
+
+function buildBlock(startSlot, endSlot, entry){
+  const row = document.createElement('div');
+  row.className = 'block' + (entry?'':' empty');
+
+  const label = document.createElement('div');
+  label.className='hour-label';
+  label.textContent = slotLabel(startSlot);
+  row.appendChild(label);
+
+  const isFixed = entry && FIXED_CATS.has(entry.cat);
+  const content = document.createElement('div');
+  content.className = 'content' + (entry && entry.template ? ' tpl':'') + (isFixed ? ' fixed':'');
+  content.style.minHeight = (22*(endSlot-startSlot+1)-1)+'px';
+
+  if(entry && isFixed){
+    content.style.background = `color-mix(in srgb, var(${CATS[entry.cat].var}) 14%, transparent)`;
+    content.style.borderLeft = `3px solid var(${CATS[entry.cat].var})`;
+    const main=document.createElement('div'); main.className='fixed-main';
+    const dot=document.createElement('span'); dot.className='fixed-dot'; dot.style.background=`var(${CATS[entry.cat].var})`;
+    main.appendChild(dot);
+    const txt=document.createElement('span'); txt.className='txt'; txt.textContent=entry.text;
+    main.appendChild(txt);
+    content.appendChild(main);
+    const subParts=[slotLabel(startSlot)+'–'+slotLabel(endSlot+1)];
+    if(entry.location) subParts.push(entry.location);
+    const sub=document.createElement('div'); sub.className='sub'; sub.textContent=subParts.join(' · ');
+    content.appendChild(sub);
+  } else if(entry){
+    content.style.borderLeftColor = `var(${CATS[entry.cat].var})`;
+    const check = document.createElement('button');
+    check.className='check'+(entry.done?' done':'');
+    check.title = entry.done ? 'Mark not done':'Mark done';
+    check.onclick=(ev)=>{ ev.stopPropagation(); toggleDone(startSlot,endSlot,entry); };
+    content.appendChild(check);
+
+    const txt=document.createElement('span');
+    txt.className='txt'+(entry.done?' done':'');
+    txt.textContent = entry.text;
+    content.appendChild(txt);
+
+    if(entry.template){
+      const b=document.createElement('span'); b.className='badge'; b.textContent='recurring';
+      content.appendChild(b);
+    }
+  } else {
+    const ph=document.createElement('span'); ph.className='placeholder'; ph.textContent='+';
+    content.appendChild(ph);
+  }
+  content.onclick = ()=>{ editingSlot = startSlot; render(); };
+  row.appendChild(content);
+  return row;
+}
+
+function buildEditor(slot, entry){
+  const wrap=document.createElement('div');
+  wrap.className='editor';
+  const input=document.createElement('input');
+  input.type='text'; input.value = entry?entry.text:''; input.placeholder='What are you doing?';
+  wrap.appendChild(input);
+
+  const cats=document.createElement('div'); cats.className='cats';
+  let chosenCat = entry?entry.cat:'other';
+  Object.keys(CATS).forEach(key=>{
+    const b=document.createElement('button');
+    b.style.background=`var(${CATS[key].var})`;
+    b.title=CATS[key].label;
+    if(chosenCat===key) b.classList.add('active');
+    b.onclick=(ev)=>{ ev.preventDefault(); chosenCat=key;
+      cats.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+    };
+    cats.appendChild(b);
+  });
+  wrap.appendChild(cats);
+
+  const locWrap=document.createElement('div'); locWrap.className='loc';
+  const locInput=document.createElement('input');
+  locInput.type='text'; locInput.value = entry?(entry.location||''):''; locInput.placeholder='Location on campus (optional)';
+  locWrap.appendChild(locInput);
+  wrap.appendChild(locWrap);
+
+  const actions=document.createElement('div'); actions.className='actions';
+  const saveBtn=document.createElement('button'); saveBtn.textContent='Save';
+  saveBtn.onclick=(ev)=>{ev.preventDefault(); commitEditor(slot,input.value.trim(),chosenCat, entry?entry.done:false, locInput.value.trim());};
+  actions.appendChild(saveBtn);
+  if(entry){
+    const clearBtn=document.createElement('button'); clearBtn.textContent='Clear';
+    clearBtn.onclick=(ev)=>{ev.preventDefault(); clearSlot(slot,entry);};
+    actions.appendChild(clearBtn);
+  }
+  const cancelBtn=document.createElement('button'); cancelBtn.textContent='Cancel';
+  cancelBtn.onclick=(ev)=>{ev.preventDefault(); editingSlot=null; render();};
+  actions.appendChild(cancelBtn);
+  wrap.appendChild(actions);
+
+  input.addEventListener('keydown',(ev)=>{
+    if(ev.key==='Enter'){ev.preventDefault(); commitEditor(slot,input.value.trim(),chosenCat, entry?entry.done:false, locInput.value.trim());}
+    if(ev.key==='Escape'){ev.preventDefault(); editingSlot=null; render();}
+  });
+  setTimeout(()=>input.focus(),0);
+  return wrap;
+}
+
+async function commitEditor(slot,text,cat,done,location){
+  if(!dayData.overrides) dayData.overrides={};
+  if(text){
+    dayData.overrides[slot] = {text,cat,done,location:location||''};
+  } else {
+    dayData.overrides[slot] = {cleared:true};
+  }
+  editingSlot=null;
+  await safeSet(dayKey(currentDate), dayData);
+  render();
+  await computeReminders();
+}
+async function clearSlot(slot,entry){
+  if(!dayData.overrides) dayData.overrides={};
+  dayData.overrides[slot] = {cleared:true};
+  editingSlot=null;
+  await safeSet(dayKey(currentDate), dayData);
+  render();
+  await computeReminders();
+}
+async function toggleDone(startSlot,endSlot,entry){
+  if(!dayData.overrides) dayData.overrides={};
+  for(let s=startSlot;s<=endSlot;s++){
+    dayData.overrides[s] = {text:entry.text, cat:entry.cat, done:!entry.done, location:entry.location||''};
+  }
+  await safeSet(dayKey(currentDate), dayData);
+  render();
+  await computeReminders();
+}
+
+function startAssign(item){
+  assigning = item;
+  document.getElementById('assignFlag').classList.add('show');
+  document.getElementById('assignFlagText').textContent = 'Tap an empty slot to place "'+item.text+'"';
+}
+function cancelAssign(){
+  assigning=null;
+  document.getElementById('assignFlag').classList.remove('show');
+}
+document.getElementById('assignCancel').onclick = cancelAssign;
+
+function renderTodo(){
+  const list=document.getElementById('todoList');
+  list.innerHTML='';
+  if(backlog.length===0){
+    list.innerHTML = '<div style="font-size:12px;color:#b7ab8f;">Nothing on your list — add a task above, then place it into a time slot.</div>';
+    return;
+  }
+  backlog.forEach(item=>{
+    const row=document.createElement('div'); row.className='todo-item';
+    const dot=document.createElement('span');
+    dot.style.background=`var(${CATS[item.cat].var})`; dot.style.width='8px';dot.style.height='8px';dot.style.borderRadius='50%';dot.style.display='inline-block';dot.style.flex='0 0 8px';
+    row.appendChild(dot);
+    const t=document.createElement('span'); t.className='t'; t.textContent=item.text;
+    row.appendChild(t);
+    const assignBtn=document.createElement('button'); assignBtn.textContent='Place on today';
+    assignBtn.onclick=()=>{ startAssign(item); };
+    row.appendChild(assignBtn);
+    const delBtn=document.createElement('button'); delBtn.textContent='Remove';
+    delBtn.onclick=async ()=>{ backlog = backlog.filter(x=>x.id!==item.id); await safeSet('backlog',backlog); renderTodo(); };
+    row.appendChild(delBtn);
+    list.appendChild(row);
+  });
+}
+document.getElementById('todoAddBtn').onclick = async ()=>{
+  const input=document.getElementById('todoInput');
+  const text=input.value.trim();
+  if(!text) return;
+  const cat=document.getElementById('todoCat').value;
+  backlog.push({id:uid(),text,cat});
+  input.value='';
+  await safeSet('backlog',backlog);
+  renderTodo();
+};
+document.getElementById('todoInput').addEventListener('keydown',(e)=>{ if(e.key==='Enter') document.getElementById('todoAddBtn').click(); });
+
+document.getElementById('sheet').addEventListener('click',async (ev)=>{
+  if(!assigning) return;
+  const contentEl = ev.target.closest('.content');
+  if(!contentEl) return;
+  if(contentEl.querySelector('.placeholder')){
+    const row = contentEl.parentElement;
+    const label = row.querySelector('.hour-label').textContent;
+    const slot = labelToSlot(label);
+    if(slot==null) return;
+    if(!dayData.overrides) dayData.overrides={};
+    dayData.overrides[slot] = {text:assigning.text, cat:assigning.cat, done:false};
+    backlog = backlog.filter(x=>x.id!==assigning.id);
+    await safeSet(dayKey(currentDate), dayData);
+    await safeSet('backlog',backlog);
+    cancelAssign();
+    editingSlot=null;
+    render();
+    renderTodo();
+    await computeReminders();
+  }
+}, true);
+
+function labelToSlot(lbl){
+  const m = lbl.match(/(\d+):(\d\d)\s?(AM|PM)/);
+  if(!m) return null;
+  let h=(+m[1])%12; if(m[3]==='PM') h+=12;
+  const min = +m[2];
+  return h*2 + (min===30?1:0);
+}
+
+function startOfWeek(d){
+  const dd=new Date(d); const diff = dd.getDay(); dd.setDate(dd.getDate()-diff); dd.setHours(0,0,0,0); return dd;
+}
+async function computeReminders(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekStart = startOfWeek(today);
+  const unfinished=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart); d.setDate(d.getDate()+i);
+    if(d>=today) continue;
+    const ds=fmt(d);
+    const data = await safeGet(dayKey(d));
+    const merged = mergedForDate(ds, data, d.getDay());
+    merged.forEach(e=>{
+      if(e && !e.done && !FIXED_CATS.has(e.cat)){ unfinished.push({date:ds, text:e.text, day:DOW_NAMES[d.getDay()]}); }
+    });
+  }
+  const banner=document.getElementById('banner');
+  if(unfinished.length>0){
+    banner.classList.add('show');
+    banner.innerHTML = '<button class="dismiss" id="dismissBanner">dismiss</button><b>'+unfinished.length+' unfinished item'+(unfinished.length>1?'s':'')+' this week</b><ul>'+
+      unfinished.slice(0,6).map(u=>'<li>'+u.day+': '+escapeHtml(u.text)+'</li>').join('')+'</ul>';
+    document.getElementById('dismissBanner').onclick=()=>banner.classList.remove('show');
+  } else {
+    banner.classList.remove('show'); banner.innerHTML='';
+  }
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+async function renderWeekView(){
+  const container = document.getElementById('weekView');
+  container.innerHTML = '<p style="font-size:12px;color:var(--ink-soft);margin:6px 0 16px;">Everything scheduled this week — check items off as you finish them.</p>';
+  const weekStart = startOfWeek(currentDate);
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart); d.setDate(d.getDate()+i);
+    const ds=fmt(d);
+    const data = await safeGet(dayKey(d));
+    const merged = mergedForDate(ds, data, d.getDay());
+    const group=document.createElement('div'); group.className='weekday-group';
+    const h=document.createElement('h3'); h.textContent = d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+    group.appendChild(h);
+    let any=false;
+    let i2=0;
+    while(i2<48){
+      const e=merged[i2];
+      if(e){
+        any=true;
+        let j=i2+1;
+        while(j<48 && sig(merged[j])===sig(e)) j++;
+        const row=document.createElement('div'); row.className='todo-item';
+        const isFixed = FIXED_CATS.has(e.cat);
+        (function(i2c,jc,ec,dc){
+          if(!isFixed){
+            const check=document.createElement('button'); check.className='check'+(ec.done?' done':'');
+            check.onclick=async ()=>{
+              const dd = await safeGet(dayKey(dc)) || {overrides:{}};
+              if(!dd.overrides) dd.overrides={};
+              for(let s=i2c;s<jc;s++) dd.overrides[s]={text:ec.text,cat:ec.cat,done:!ec.done,location:ec.location||''};
+              await safeSet(dayKey(dc), dd);
+              renderWeekView();
+              computeReminders();
+            };
+            row.appendChild(check);
+          } else {
+            const spacer=document.createElement('span'); spacer.style.width='14px'; spacer.style.display='inline-block'; row.appendChild(spacer);
+          }
+        })(i2,j,e,new Date(d));
+        const dot=document.createElement('span');
+        dot.style.background=`var(${CATS[e.cat].var})`; dot.style.width='8px';dot.style.height='8px';dot.style.borderRadius='50%';dot.style.display='inline-block';dot.style.flex='0 0 8px';
+        row.appendChild(dot);
+        const t=document.createElement('span'); t.className='t';
+        t.textContent = slotLabel(i2)+'–'+slotLabel(j)+' — '+e.text + (e.location?' · '+e.location:'') + (e.done?' (done)':'');
+        if(isFixed) t.style.fontWeight='600';
+        row.appendChild(t);
+        group.appendChild(row);
+        i2=j;
+      } else i2++;
+    }
+    if(!any){ const n=document.createElement('div'); n.className='empty-note'; n.textContent='Nothing scheduled.'; group.appendChild(n); }
+    container.appendChild(group);
+  }
+}
+
+function renderDowTabs(){
+  const wrap=document.getElementById('dowTabs'); wrap.innerHTML='';
+  DOW_NAMES.forEach((name,idx)=>{
+    const b=document.createElement('button'); b.className='pillbtn'+(currentDow===idx?' on':''); b.textContent=name;
+    b.onclick=()=>{ currentDow=idx; renderDowTabs(); renderTemplateBlockList(); };
+    wrap.appendChild(b);
+  });
+}
+function renderTemplateBlockList(){
+  const wrap=document.getElementById('tplBlockList'); wrap.innerHTML='';
+  const blocks = template.blocks.filter(b=>b.dow===currentDow).sort((a,b)=>a.start-b.start);
+  if(blocks.length===0){ wrap.innerHTML='<div style="font-size:12px;color:#b7ab8f;padding:6px 0;">No fixed blocks for '+DOW_NAMES[currentDow]+' yet.</div>'; return; }
+  blocks.forEach(b=>{
+    const row=document.createElement('div'); row.className='tpl-block-row';
+    const dot=document.createElement('span');
+    dot.style.background=`var(${CATS[b.cat].var})`; dot.style.width='8px';dot.style.height='8px';dot.style.borderRadius='50%';dot.style.display='inline-block';dot.style.flex='0 0 8px';
+    row.appendChild(dot);
+    const lbl=document.createElement('span'); lbl.className='lbl';
+    lbl.textContent = b.label+' · '+minToLabel(b.start)+'–'+minToLabel(b.end) + (b.location? ' · '+b.location : '');
+    row.appendChild(lbl);
+    const edit=document.createElement('button'); edit.textContent='Edit';
+    edit.onclick=()=>{ startEditBlock(b); };
+    row.appendChild(edit);
+    const del=document.createElement('button'); del.textContent='Remove';
+    del.onclick=async ()=>{ template.blocks=template.blocks.filter(x=>x.id!==b.id); await safeSet('template',template); renderTemplateBlockList(); await loadDay(); };
+    row.appendChild(del);
+    wrap.appendChild(row);
+  });
+}
+function startEditBlock(b){
+  editingBlockId = b.id;
+  document.getElementById('tplLabel').value = b.label;
+  document.getElementById('tplCat').value = b.cat;
+  document.getElementById('tplStart').value = b.start;
+  document.getElementById('tplEnd').value = b.end;
+  document.getElementById('tplLocation').value = b.location||'';
+  document.getElementById('tplAddBtn').textContent = 'Save changes';
+  document.getElementById('tplCancelEdit').style.display = '';
+  document.getElementById('tplLabel').focus();
+}
+function stopEditBlock(){
+  editingBlockId = null;
+  document.getElementById('tplLabel').value = '';
+  document.getElementById('tplLocation').value = '';
+  document.getElementById('tplAddBtn').textContent = 'Add block';
+  document.getElementById('tplCancelEdit').style.display = 'none';
+}
+document.getElementById('tplCancelEdit').onclick = stopEditBlock;
+function populateTimeSelects(){
+  const startSel=document.getElementById('tplStart'), endSel=document.getElementById('tplEnd');
+  startSel.innerHTML=''; endSel.innerHTML='';
+  for(let m=0;m<=1410;m+=30){
+    const o=document.createElement('option'); o.value=m; o.textContent=minToLabel(m); startSel.appendChild(o);
+  }
+  for(let m=30;m<=1440;m+=30){
+    const o=document.createElement('option'); o.value=m; o.textContent=(m===1440?'12:00 AM':minToLabel(m)); endSel.appendChild(o);
+  }
+  endSel.value=1440;
+}
+document.getElementById('tplAddBtn').onclick=async ()=>{
+  const label=document.getElementById('tplLabel').value.trim();
+  if(!label) return;
+  const cat=document.getElementById('tplCat').value;
+  const start=+document.getElementById('tplStart').value;
+  const end=+document.getElementById('tplEnd').value;
+  const location=document.getElementById('tplLocation').value.trim();
+  if(end<=start){ setStatus('End must be after start'); return; }
+  if(editingBlockId){
+    const b = template.blocks.find(x=>x.id===editingBlockId);
+    if(b){ b.label=label; b.cat=cat; b.start=start; b.end=end; b.location=location; }
+    stopEditBlock();
+  } else {
+    template.blocks.push({id:uid(),dow:currentDow,start,end,label,cat,location});
+    document.getElementById('tplLabel').value='';
+    document.getElementById('tplLocation').value='';
+  }
+  await safeSet('template',template);
+  renderTemplateBlockList();
+  await loadDay();
+};
+function renderHolidayList(){
+  const wrap=document.getElementById('holidayList'); wrap.innerHTML='';
+  holidays.slice().sort().forEach(ds=>{
+    const chip=document.createElement('span'); chip.className='holiday-chip';
+    chip.innerHTML = '<span>'+ds+'</span>';
+    const rm=document.createElement('button'); rm.textContent='×';
+    rm.onclick=async ()=>{ holidays=holidays.filter(x=>x!==ds); await safeSet('holidays',holidays); renderHolidayList(); await loadDay(); };
+    chip.appendChild(rm);
+    wrap.appendChild(chip);
+  });
+}
+document.getElementById('holidayAddBtn').onclick=async ()=>{
+  const v=document.getElementById('holidayInput').value;
+  if(!v) return;
+  if(!holidays.includes(v)) holidays.push(v);
+  await safeSet('holidays',holidays);
+  renderHolidayList();
+  await loadDay();
+};
+function renderTemplateEditor(){
+  renderDowTabs();
+  renderTemplateBlockList();
+  populateTimeSelects();
+  renderHolidayList();
+}
+
+document.getElementById('prevBtn').onclick=()=>{ currentDate.setDate(currentDate.getDate()-1); editingSlot=null; loadDay(); };
+document.getElementById('nextBtn').onclick=()=>{ currentDate.setDate(currentDate.getDate()+1); editingSlot=null; loadDay(); };
+document.getElementById('todayBtn').onclick=()=>{ currentDate=new Date(); editingSlot=null; loadDay(); };
+document.getElementById('datePicker').onchange=(ev)=>{ const [y,m,d]=ev.target.value.split('-').map(Number); currentDate=new Date(y,m-1,d); editingSlot=null; loadDay(); };
+document.getElementById('expandBtn').onclick=()=>{ showEarly=!showEarly; render(); };
+document.getElementById('holidayToggle').onclick=async ()=>{
+  const ds=fmt(currentDate);
+  if(holidays.includes(ds)) holidays=holidays.filter(x=>x!==ds); else holidays.push(ds);
+  await safeSet('holidays',holidays);
+  renderHeader(); render(); renderHolidayList();
+  await computeReminders();
+};
+document.getElementById('dayTabBtn').onclick=()=>{
+  viewMode='day';
+  document.getElementById('dayTabBtn').classList.add('on');
+  document.getElementById('weekTabBtn').classList.remove('on');
+  document.getElementById('dayView').style.display='';
+  document.getElementById('weekView').style.display='none';
+};
+document.getElementById('weekTabBtn').onclick=async ()=>{
+  viewMode='week';
+  document.getElementById('weekTabBtn').classList.add('on');
+  document.getElementById('dayTabBtn').classList.remove('on');
+  document.getElementById('dayView').style.display='none';
+  document.getElementById('weekView').style.display='';
+  await renderWeekView();
+};
+
+loadAll();
+</script>
+</body>
+</html>
