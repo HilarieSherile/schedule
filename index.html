@@ -204,13 +204,16 @@
 // ---- Firebase setup ----
 // Paste your project's config here (Firebase console > Project settings > Your apps > SDK setup and config)
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyA93W5vkrgAtjTM01XPBHSYBhmjg9SVmbE",
+  authDomain: "schedule-f8d69.firebaseapp.com",
+  projectId: "schedule-f8d69",
+  storageBucket: "schedule-f8d69.firebasestorage.app",
+  messagingSenderId: "654909405598",
+  appId: "1:654909405598:web:72317f503aec18189a3e8f",
+  measurementId: "G-5N7RCRE1BY"
 };
+
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 // Every device using this file with the same firebaseConfig reads/writes the same Firestore project,
